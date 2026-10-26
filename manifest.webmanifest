@@ -1,0 +1,18 @@
+{
+  "id": "/Stock-News/",
+  "name": "朝5分 銘柄ニュース",
+  "short_name": "朝5分 銘柄",
+  "description": "ウォッチ銘柄の直近ニュースを毎朝5分で読める日本語ダイジェスト（個人用）",
+  "lang": "ja",
+  "start_url": "/Stock-News/?source=homescreen",
+  "scope": "/Stock-News/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1f2ee",
+  "theme_color": "#16302b",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

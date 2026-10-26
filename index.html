@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>朝5分 銘柄ニュース</title>
+<meta name="description" content="ウォッチ銘柄の直近ニュースを毎朝5分で読める日本語ダイジェスト（個人用）">
+<meta name="theme-color" content="#16302b">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="朝5分 銘柄">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one narrow reading column — masthead, 4 points, watchlist ticker strip, stories, quiet list, earnings calendar; a separate editor view for the watchlist. */
+:root{
+  --bg:#f1f2ee; --paper:#fcfcf9; --ink:#16302b; --muted:#5d6b66; --line:#d8ddd6;
+  --accent:#b8862b; --accent-soft:#f4ead6; --link:#285e8a;
+  --k-disclosure:#285e8a; --k-earnings:#b8862b; --k-price:#6b4fa3; --k-index:#2f7a6b; --k-industry:#5d6b66; --k-other:#8a5a44;
+  --f-display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101815; --paper:#17221e; --ink:#e6ece8; --muted:#97a69f; --line:#27352f;
+  --accent:#e2b45c; --accent-soft:#33291a; --link:#8cbbe2;
+  --k-disclosure:#8cbbe2; --k-earnings:#e2b45c; --k-price:#b79ceb; --k-index:#78c7b3; --k-industry:#a3b0aa; --k-other:#e0a184;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101815; --paper:#17221e; --ink:#e6ece8; --muted:#97a69f; --line:#27352f;
+  --accent:#e2b45c; --accent-soft:#33291a; --link:#8cbbe2;
+  --k-disclosure:#8cbbe2; --k-earnings:#e2b45c; --k-price:#b79ceb; --k-index:#78c7b3; --k-industry:#a3b0aa; --k-other:#e0a184;
+  color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.85;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+a{color:var(--link)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:26px}
+.wrap{width:100%;min-width:0}
+.wrap>*{min-width:0;max-width:100%}
+.progress{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;height:4px;margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));background:var(--line)}
+.progress span{display:block;height:100%;width:0;background:var(--accent)}
+.top{display:flex;justify-content:space-between;align-items:center;padding-top:14px;font-size:13px;color:var(--muted);gap:8px;flex-wrap:wrap}
+.linkbtn{font:inherit;font-size:13px;font-weight:700;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer}
+.mast{display:flex;flex-direction:column;gap:10px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;color:var(--accent);text-transform:uppercase}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,8vw,42px);line-height:1.2;margin:0;text-wrap:balance}
+h1 .tick{font-family:var(--f-mono);font-size:.45em;font-weight:600;color:var(--accent);vertical-align:.4em;margin-left:.3em}
+.meta{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);font-size:14px}
+.meta b{color:var(--ink)}
+.loadrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{font:inherit;font-weight:700;font-size:15px;border:0;border-radius:999px;padding:12px 22px;background:var(--ink);color:var(--bg);cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.btn:disabled{opacity:.55;cursor:wait}
+.btn.sub{background:var(--paper);color:var(--ink);border:1px solid var(--line)}
+.btn .ic{width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%}
+.btn.spin .ic{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.status{font-size:13px;color:var(--muted)}
+select,input{font:inherit;font-size:15px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.points{background:var(--accent-soft);border-radius:14px;padding:18px}
+.points h2{font-size:14px;letter-spacing:.08em;margin:0 0 8px;color:var(--accent)}
+.points ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;font-weight:500;font-size:15px;line-height:1.7}
+.strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.chip{flex:0 0 auto;font:inherit;font-size:13px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:10px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;line-height:1.3}
+.chip .c{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.chip .n{font-weight:700;white-space:nowrap}
+.chip.has{border-color:var(--accent)}
+.chip.has .c::after{content:" ●";color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip[aria-pressed="true"] .c{color:var(--bg)}
+.stories{display:flex;flex-direction:column}
+.story{padding:22px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px;min-width:0}
+.story:first-child{border-top:0;padding-top:4px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.code{font-family:var(--f-mono);font-weight:600;font-size:13px;background:var(--ink);color:var(--bg);border-radius:6px;padding:1px 7px}
+.cname{font-weight:700;font-size:14px}
+.kind{font-size:11px;font-weight:700;letter-spacing:.06em;border:1.5px solid var(--k);color:var(--k);border-radius:4px;padding:0 6px;line-height:1.6}
+.story h3{font-family:var(--f-display);font-size:20px;line-height:1.45;margin:0;text-wrap:balance}
+.story p{margin:0}
+.why{border-left:3px solid var(--accent);padding:4px 0 4px 12px;font-size:14.5px}
+.why b{color:var(--accent);margin-right:6px}
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.done{font:inherit;font-size:13px;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:4px 12px;cursor:pointer}
+.story.read .done{background:var(--accent);border-color:var(--accent);color:#fff}
+.story.read h3,.story.read p{opacity:.6}
+.box{border:1px solid var(--line);background:var(--paper);border-radius:14px;padding:16px 18px}
+.box h2{font-size:14px;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
+.quiet{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:14px}
+.quiet span{white-space:nowrap}
+.quiet .c{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-right:3px}
+.trend h2{font-family:var(--f-display);font-size:18px;color:var(--ink);letter-spacing:0;margin:0 0 6px}
+.trend p{margin:0;font-size:15px}
+.cal ul{list-style:none;margin:0;padding:0}
+.cal li{display:grid;grid-template-columns:8.5em 1fr;gap:10px;padding:10px 0;border-top:1px dashed var(--line);font-size:14.5px;align-items:baseline}
+.cal li:first-child{border-top:0}
+.cal time{font-family:var(--f-mono);font-size:13px;color:var(--accent);font-variant-numeric:tabular-nums}
+.cal span{min-width:0}
+.cal .code{margin-right:6px;font-size:11px}
+.empty{background:var(--paper);border:1px dashed var(--line);border-radius:14px;padding:24px;color:var(--muted);text-align:center}
+.note{font-size:12.5px;color:var(--muted);line-height:1.7}
+/* editor */
+.ed-row{display:grid;grid-template-columns:5.2em 1fr 1fr 2.4em;gap:6px;align-items:center}
+.ed-row input{width:100%;font-size:14px;padding:7px 8px}
+.ed-row .code-in{font-family:var(--f-mono)}
+.ed-head{font-size:12px;color:var(--muted)}
+.ed-list{display:flex;flex-direction:column;gap:6px}
+.del{font:inherit;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;height:36px;cursor:pointer}
+.steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:10px;font-size:15px}
+.steps .btn{margin-top:6px}
+pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-size:12px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px;max-height:180px;overflow:auto;margin:0}
+@media (max-width:420px){.ed-row{grid-template-columns:4.6em 1fr 2.4em}.ed-row .formal{grid-column:2/3}.ed-row .del{grid-row:1/3;grid-column:3}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="progress" aria-hidden="true"><span id="bar"></span></div>
+
+<div class="wrap" id="view-news">
+  <div class="top">
+    <span id="clock"></span>
+    <button class="linkbtn" id="open-editor" type="button">銘柄を編集</button>
+  </div>
+  <header class="mast">
+    <div class="eyebrow">Morning Brief · Watchlist</div>
+    <h1>朝5分で読む<br>銘柄ニュース<span class="tick" id="count-tick"></span></h1>
+    <div class="meta" id="meta"><span>最新号を読み込み中…</span></div>
+    <div class="loadrow">
+      <button class="btn" id="load" type="button"><span class="ic" aria-hidden="true"></span>最新ニュースを確認</button>
+      <select id="past" aria-label="過去の号を選ぶ" hidden></select>
+    </div>
+    <div class="status" id="status" role="status"></div>
+  </header>
+  <main id="main" class="wrap"><div class="empty">最新号を読み込んでいます…</div></main>
+  <p class="note">個人の情報収集用に、公開された報道や適時開示をもとに日本語でまとめたものです。投資助言ではありません。売買の判断はご自身で、必ず各社の開示資料など一次情報を確認してください。</p>
+</div>
+
+<div class="wrap" id="view-editor" hidden>
+  <div class="top">
+    <button class="linkbtn" id="close-editor" type="button">← ニュースに戻る</button>
+    <span id="ed-count"></span>
+  </div>
+  <header class="mast">
+    <div class="eyebrow">Watchlist Editor</div>
+    <h1>銘柄を編集</h1>
+    <p class="status" style="margin:0">ここで追加・削除してから、下の手順でGitHubに保存します。翌朝のニュースから反映されます。</p>
+  </header>
+  <section class="box">
+    <h2>ウォッチ銘柄</h2>
+    <div class="ed-row ed-head" aria-hidden="true"><span>コード</span><span>表示名</span><span class="formal">正式な社名（検索用）</span><span></span></div>
+    <div class="ed-list" id="ed-list"></div>
+    <div class="loadrow" style="margin-top:12px">
+      <button class="btn sub" id="ed-add" type="button">＋ 銘柄を追加</button>
+      <button class="btn sub" id="ed-reset" type="button">編集を取り消す</button>
+    </div>
+    <div class="status" id="ed-msg" role="status"></div>
+  </section>
+  <section class="box">
+    <h2>GitHubに保存する手順</h2>
+    <ol class="steps">
+      <li>保存用の文字をコピーします。<br><button class="btn" id="ed-copy" type="button">保存用にコピー</button></li>
+      <li>GitHubの編集画面を開きます。<br><a class="btn sub" id="ed-gh" href="https://github.com/pecpec37-gift/Stock-News/edit/main/data/watchlist.json" target="_blank" rel="noopener">GitHubで開く ↗</a></li>
+      <li>中身を全部消して貼り付け、「Commit changes」を押します。</li>
+    </ol>
+    <details style="margin-top:12px"><summary class="status">コピーされる内容を見る</summary><pre id="ed-preview"></pre></details>
+  </section>
+</div>
+
+<script>
+(function(){
+  const KIND = {
+    disclosure:["開示","--k-disclosure"], earnings:["決算","--k-earnings"], price:["株価","--k-price"],
+    index:["指数・需給","--k-index"], industry:["業界","--k-industry"], other:["その他","--k-other"]
+  };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const safeUrl = u => /^https?:\/\//i.test(String(u||"")) ? u : "#";
+  const store = {
+    get(k){ try{ return JSON.parse(localStorage.getItem(k) || "null"); }catch(e){ return null; } },
+    set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+    del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+  };
+  let list = [], current = null, watch = [], filter = "all";
+  const cache = {};
+
+  function tick(){
+    const d = new Date();
+    $("clock").textContent = d.toLocaleDateString("ja-JP",{month:"long",day:"numeric",weekday:"short"}) + " " + d.toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"});
+  }
+  tick(); setInterval(tick, 30000);
+
+  async function getJSON(p){
+    const r = await fetch(p + "?t=" + Date.now(), {cache:"no-store"});
+    if(!r.ok) throw new Error(String(r.status));
+    return r.json();
+  }
+  async function getEdition(d){ if(!cache[d]) cache[d] = await getJSON("data/editions/" + d + ".json"); return cache[d]; }
+  const nameOf = code => (watch.find(w => w.code === code) || {}).name || code;
+  const codesOf = it => Array.isArray(it.codes) ? it.codes : (it.code ? [it.code] : []);
+  function readKey(){ return "read:" + (current ? current.date : ""); }
+
+  function render(){
+    const e = current; if(!e) return;
+    const all = e.items || [];
+    const newsCodes = new Set(all.flatMap(codesOf));
+    if(filter !== "all" && !watch.some(w => w.code === filter)) filter = "all";
+    const items = all.filter(it => filter === "all" || codesOf(it).includes(filter));
+    const read = store.get(readKey()) || [];
+    $("count-tick").textContent = watch.length ? watch.length + "銘柄" : "";
+    $("meta").innerHTML = `<span><b>${esc(e.label)}</b></span><span>対象期間 ${esc(e.coverage)}</span><span>約${esc(e.minutes)}分</span><span>ニュース ${all.length}本</span>`;
+
+    const sorted = watch.slice().sort((a,b) => (newsCodes.has(b.code) - newsCodes.has(a.code)));
+    const chips = [`<button class="chip" type="button" data-f="all" aria-pressed="${filter==="all"}"><span class="c">ALL</span><span class="n">すべて</span></button>`]
+      .concat(sorted.map(w => `<button class="chip${newsCodes.has(w.code)?" has":""}" type="button" data-f="${esc(w.code)}" aria-pressed="${filter===w.code}"><span class="c">${esc(w.code)}</span><span class="n">${esc(w.name)}</span></button>`)).join("");
+
+    const stories = items.map(it => {
+      const idx = all.indexOf(it), isRead = read.includes(idx);
+      const k = KIND[it.kind] || KIND.other;
+      const tags = codesOf(it).map(c => `<span class="code">${esc(c)}</span><span class="cname">${esc(nameOf(c))}</span>`).join("");
+      return `<article class="story${isRead?" read":""}">
+        <div class="tags">${tags}<span class="kind" style="--k:var(${k[1]})">${k[0]}</span></div>
+        <h3>${esc(it.headline)}</h3>
+        <p>${esc(it.body)}</p>
+        <div class="why"><b>株価への関係</b>${esc(it.why)}</div>
+        <div class="foot"><span>出典：<a href="${esc(safeUrl(it.url))}" target="_blank" rel="noopener">${esc(it.src)}</a></span>
+        <button class="done" type="button" data-i="${idx}">${isRead?"読んだ ✓":"読んだ"}</button></div>
+      </article>`;
+    }).join("");
+
+    const quietCodes = watch.map(w => w.code).filter(c => !newsCodes.has(c));
+    const quiet = quietCodes.map(c => `<span><span class="c">${esc(c)}</span>${esc(nameOf(c))}</span>`).join("");
+    const cal = (e.calendar||[]).map(x => `<li><time>${esc(x.when)}</time><span>${x.code?`<span class="code">${esc(x.code)}</span>`:""}${esc(x.what)}</span></li>`).join("");
+
+    $("main").innerHTML = `
+      <section class="points" aria-label="今日のポイント"><h2>まずはこれだけ</h2><ol>${(e.points||[]).map(p => `<li>${esc(p)}</li>`).join("")}</ol></section>
+      <nav class="strip" aria-label="銘柄で絞り込む">${chips}</nav>
+      <section class="stories">${stories || '<div class="empty">この銘柄のニュースはこの号にありません。</div>'}</section>
+      ${filter==="all" && quiet ? `<section class="box"><h2>目立ったニュースなし（${quietCodes.length}銘柄）</h2><div class="quiet">${quiet}</div></section>` : ""}
+      ${e.trend && filter==="all" ? `<section class="box trend"><h2>${esc(e.trend.title)}</h2><p>${esc(e.trend.body)}</p></section>` : ""}
+      ${cal ? `<section class="box cal"><h2>決算・イベント予定（日本時間）</h2><ul>${cal}</ul></section>` : ""}`;
+    onScroll();
+  }
+
+  $("main").addEventListener("click", ev => {
+    const chip = ev.target.closest(".chip");
+    if(chip){ filter = chip.dataset.f; render(); return; }
+    const done = ev.target.closest(".done");
+    if(done){
+      const i = Number(done.dataset.i), k = readKey(), r = new Set(store.get(k) || []);
+      r.has(i) ? r.delete(i) : r.add(i); store.set(k, [...r]); render();
+    }
+  });
+
+  function fillPast(){
+    const sel = $("past");
+    if(list.length < 2){ sel.hidden = true; return; }
+    sel.innerHTML = list.map(x => `<option value="${esc(x.date)}"${current && x.date===current.date?" selected":""}>${esc(x.label)}</option>`).join("");
+    sel.hidden = false;
+  }
+  $("past").addEventListener("change", async ev => {
+    try{ current = await getEdition(ev.target.value); render(); scrollTo({top:0}); }
+    catch(e){ $("status").textContent = "この号を読み込めませんでした。"; }
+  });
+
+  async function loadWatch(){
+    try{ const w = await getJSON("data/watchlist.json"); watch = (w.stocks || []).filter(s => s && s.code); }
+    catch(e){ /* keep previous */ }
+  }
+
+  async function load(){
+    const btn = $("load");
+    btn.disabled = true; btn.classList.add("spin");
+    $("status").textContent = "最新号を確認しています…";
+    const before = current && current.date;
+    try{
+      await loadWatch();
+      const idx = await getJSON("data/index.json");
+      list = (idx.editions || []).slice().sort((a,b) => a.date < b.date ? 1 : -1);
+      if(!list.length){
+        $("meta").innerHTML = "<span>まだ号がありません</span>";
+        $("main").innerHTML = '<div class="empty">まだ号が届いていません。毎朝6時ごろに新しい号が追加されます。</div>';
+        $("status").textContent = ""; return;
+      }
+      delete cache[list[0].date];
+      current = await getEdition(list[0].date);
+      const t = new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"});
+      $("status").textContent = (before && before === current.date ? "新しい号はまだありません（" : "最新号を表示しています（") + t + " 確認）";
+      render(); fillPast();
+    }catch(err){
+      $("status").textContent = "読み込めませんでした。通信状態を確認して、もう一度押してください。";
+      if(!current) $("meta").innerHTML = "<span>オフライン</span>";
+    }finally{ btn.disabled = false; btn.classList.remove("spin"); }
+  }
+  $("load").addEventListener("click", load);
+
+  /* ---------- editor ---------- */
+  let draft = [];
+  const DRAFT_KEY = "watchDraft";
+  function draftJSON(){
+    const stocks = draft.map(r => ({code:r.code.trim().toUpperCase(), name:r.name.trim(), formal:(r.formal||"").trim() || r.name.trim()}))
+      .filter(r => r.code && r.name);
+    const d = new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
+    return JSON.stringify({updated:d, stocks}, null, 2) + "\n";
+  }
+  function edRender(){
+    $("ed-list").innerHTML = draft.map((r,i) => `<div class="ed-row" data-i="${i}">
+      <input class="code-in" id="ed-code-${i}" data-f="code" value="${esc(r.code)}" placeholder="例 7203" aria-label="証券コード" inputmode="text" autocapitalize="characters">
+      <input id="ed-name-${i}" data-f="name" value="${esc(r.name)}" placeholder="表示名" aria-label="表示名">
+      <input class="formal" id="ed-formal-${i}" data-f="formal" value="${esc(r.formal||"")}" placeholder="正式な社名（任意）" aria-label="正式な社名">
+      <button class="del" type="button" data-del="${i}" aria-label="${esc(r.name||r.code)}を削除">✕</button></div>`).join("");
+    edMeta();
+  }
+  function edMeta(){
+    const n = draft.filter(r => r.code.trim() && r.name.trim()).length;
+    $("ed-count").textContent = n + "銘柄";
+    $("ed-preview").textContent = draftJSON();
+    const codes = draft.map(r => r.code.trim().toUpperCase()).filter(Boolean);
+    const dup = codes.filter((c,i) => codes.indexOf(c) !== i);
+    const changed = draftJSON().replace(/"updated": "[^"]*"/,"") !== JSON.stringify({updated:"",stocks:watch.map(w=>({code:w.code,name:w.name,formal:w.formal||w.name}))},null,2).replace(/"updated": "[^"]*"/,"")+"\n";
+    $("ed-msg").textContent = dup.length ? "同じコードが重複しています：" + [...new Set(dup)].join("、") : (changed ? "変更があります。下の手順でGitHubに保存してください。" : "");
+  }
+  function saveDraft(){ store.set(DRAFT_KEY, draft); }
+  $("ed-list").addEventListener("input", ev => {
+    const inp = ev.target.closest("input"); if(!inp) return;
+    const i = Number(inp.closest(".ed-row").dataset.i);
+    draft[i][inp.dataset.f] = inp.value; saveDraft(); edMeta();
+  });
+  $("ed-list").addEventListener("click", ev => {
+    const b = ev.target.closest("[data-del]"); if(!b) return;
+    draft.splice(Number(b.dataset.del),1); saveDraft(); edRender();
+  });
+  $("ed-add").addEventListener("click", () => {
+    draft.push({code:"",name:"",formal:""}); saveDraft(); edRender();
+    const el = $("ed-code-" + (draft.length-1)); if(el) el.focus();
+  });
+  $("ed-reset").addEventListener("click", () => {
+    draft = watch.map(w => ({code:w.code,name:w.name,formal:w.formal||""})); store.del(DRAFT_KEY); edRender();
+    $("ed-msg").textContent = "GitHubに保存されている内容に戻しました。";
+  });
+  $("ed-copy").addEventListener("click", async () => {
+    const text = draftJSON();
+    try{ await navigator.clipboard.writeText(text); $("ed-msg").textContent = "コピーしました。次に「GitHubで開く」を押してください。"; }
+    catch(e){
+      const pre = $("ed-preview"); pre.closest("details").open = true;
+      const range = document.createRange(); range.selectNodeContents(pre);
+      const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      $("ed-msg").textContent = "自動コピーできませんでした。表示した内容を長押しでコピーしてください。";
+    }
+  });
+  async function openEditor(){
+    await loadWatch();
+    const saved = store.get(DRAFT_KEY);
+    draft = Array.isArray(saved) && saved.length ? saved : watch.map(w => ({code:w.code,name:w.name,formal:w.formal||""}));
+    edRender();
+    $("view-news").hidden = true; $("view-editor").hidden = false; scrollTo({top:0});
+  }
+  $("open-editor").addEventListener("click", openEditor);
+  $("close-editor").addEventListener("click", () => { $("view-editor").hidden = true; $("view-news").hidden = false; render(); });
+
+  function onScroll(){
+    const h = document.documentElement.scrollHeight - innerHeight;
+    $("bar").style.width = (h > 0 ? Math.min(100, scrollY / h * 100) : 0) + "%";
+  }
+  addEventListener("scroll", onScroll, {passive:true});
+  document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState === "visible" && !$("view-news").hidden && current && current.date < new Date(Date.now()+9*3600e3).toISOString().slice(0,10)) load();
+  });
+  if(location.hash === "#edit") openEditor();
+  load();
+})();
+</script>
+</body>
+</html>
