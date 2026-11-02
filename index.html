@@ -183,6 +183,8 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const safeUrl = u => /^https?:\/\//i.test(String(u||"")) ? u : "#";
+  const APP = (location.pathname.split("/").filter(Boolean)[0] || "app").toLowerCase();
+  const artId = it => { const t = String((it && it.headline) || "") + "|" + String((it && it.url) || ""); let h = 5381; for(let i=0;i<t.length;i++){ h = ((h << 5) + h + t.charCodeAt(i)) >>> 0; } return h.toString(36); };
   const store = {
     get(k){ try{ return JSON.parse(localStorage.getItem(k) || "null"); }catch(e){ return null; } },
     set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
@@ -205,7 +207,7 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
   async function getEdition(d){ if(!cache[d]) cache[d] = await getJSON("data/editions/" + d + ".json"); return cache[d]; }
   const nameOf = code => (watch.find(w => w.code === code) || {}).name || code;
   const codesOf = it => Array.isArray(it.codes) ? it.codes : (it.code ? [it.code] : []);
-  function readKey(){ return "read:" + (current ? current.date : ""); }
+  function readKey(){ return "read:" + APP + ":" + (current ? current.date : ""); }
 
   function render(){
     const e = current; if(!e) return;
@@ -222,7 +224,7 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
       .concat(sorted.map(w => `<button class="chip${newsCodes.has(w.code)?" has":""}" type="button" data-f="${esc(w.code)}" aria-pressed="${filter===w.code}"><span class="c">${esc(w.code)}</span><span class="n">${esc(w.name)}</span></button>`)).join("");
 
     const stories = items.map(it => {
-      const idx = all.indexOf(it), isRead = read.includes(idx);
+      const idx = all.indexOf(it), isRead = read.includes(artId(it));
       const k = KIND[it.kind] || KIND.other;
       const tags = codesOf(it).map(c => `<span class="code">${esc(c)}</span><span class="cname">${esc(nameOf(c))}</span>`).join("");
       return `<article class="story${isRead?" read":""}">
@@ -254,8 +256,8 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
     if(chip){ filter = chip.dataset.f; render(); return; }
     const done = ev.target.closest(".done");
     if(done){
-      const i = Number(done.dataset.i), k = readKey(), r = new Set(store.get(k) || []);
-      r.has(i) ? r.delete(i) : r.add(i); store.set(k, [...r]); render();
+      const id = artId((current.items || [])[Number(done.dataset.i)]), k = readKey(), r = new Set(store.get(k) || []);
+      r.has(id) ? r.delete(id) : r.add(id); store.set(k, [...r]); render();
     }
   });
 
@@ -303,7 +305,7 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
 
   /* ---------- editor ---------- */
   let draft = [];
-  const DRAFT_KEY = "watchDraft";
+  const DRAFT_KEY = "watchDraft:" + APP;
   function draftJSON(){
     const stocks = draft.map(r => ({code:r.code.trim().toUpperCase(), name:r.name.trim(), formal:(r.formal||"").trim() || r.name.trim()}))
       .filter(r => r.code && r.name);
