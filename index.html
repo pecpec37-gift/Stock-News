@@ -204,7 +204,24 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
     if(!r.ok) throw new Error(String(r.status));
     return r.json();
   }
-  async function getEdition(d){ if(!cache[d]) cache[d] = await getJSON("data/editions/" + d + ".json"); return cache[d]; }
+  const NEWS_BASE = "https://raw.githubusercontent.com/pecpec37-gift/Stock-News/news/";
+  const SRC = {};
+  async function getIndexes(){
+    const [a, b] = await Promise.allSettled([getJSON(NEWS_BASE + "data/index.json"), getJSON("data/index.json")]);
+    const map = {};
+    [[a, "news"], [b, "main"]].forEach(([res, src]) => {
+      if(res.status !== "fulfilled") return;
+      (res.value.editions || []).forEach(e => { if(e && e.date && !map[e.date]){ map[e.date] = e; SRC[e.date] = src; } });
+    });
+    if(a.status !== "fulfilled" && b.status !== "fulfilled") throw new Error("index");
+    return Object.values(map).sort((x,y) => x.date < y.date ? 1 : -1).slice(0, 30);
+  }
+  async function loadEdition(date){
+    const paths = SRC[date] === "main" ? ["", NEWS_BASE] : [NEWS_BASE, ""];
+    try{ return await getJSON(paths[0] + "data/editions/" + date + ".json"); }
+    catch(e){ return await getJSON(paths[1] + "data/editions/" + date + ".json"); }
+  }
+  async function getEdition(d){ if(!cache[d]) cache[d] = await loadEdition(d); return cache[d]; }
   const nameOf = code => (watch.find(w => w.code === code) || {}).name || code;
   const codesOf = it => Array.isArray(it.codes) ? it.codes : (it.code ? [it.code] : []);
   function readKey(){ return "read:" + APP + ":" + (current ? current.date : ""); }
@@ -284,8 +301,7 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
     const before = current && current.date;
     try{
       await loadWatch();
-      const idx = await getJSON("data/index.json");
-      list = (idx.editions || []).slice().sort((a,b) => a.date < b.date ? 1 : -1);
+      list = await getIndexes();
       if(!list.length){
         $("meta").innerHTML = "<span>まだ号がありません</span>";
         $("main").innerHTML = '<div class="empty">まだ号が届いていません。毎朝6時ごろに新しい号が追加されます。</div>';
