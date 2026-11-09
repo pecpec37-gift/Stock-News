@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>朝5分 銘柄ニュース</title>
-<meta name="description" content="ウォッチ銘柄の直近ニュースを毎朝5分で読める日本語ダイジェスト（個人用）">
+<meta name="description" content="ウォッチ銘柄の直近ニュースを毎朝5分で読める日本語ダイジェスト。自分の銘柄を選んで読めます">
 <meta name="theme-color" content="#16302b">
 <meta name="robots" content="noindex">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -117,6 +117,19 @@ select,input{font:inherit;font-size:15px;color:var(--ink);background:var(--paper
 .steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:10px;font-size:15px}
 .steps .btn{margin-top:6px}
 pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-size:12px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px;max-height:180px;overflow:auto;margin:0}
+.my-list{display:flex;flex-direction:column}
+.my-row{display:flex;gap:10px;align-items:center;padding:9px 2px;border-top:1px solid var(--line);cursor:pointer}
+.my-row:first-child{border-top:0}
+.my-row input{width:20px;height:20px;accent-color:var(--accent);flex:0 0 auto}
+.my-row .c{font-family:var(--f-mono);font-size:12.5px;color:var(--muted);width:3.4em;flex:0 0 auto}
+.my-row .n{font-weight:500;min-width:0}
+.my-row .x{margin-left:auto;font-size:12px;color:var(--accent);white-space:nowrap}
+.addrow{display:grid;grid-template-columns:6em 1fr auto;gap:6px;margin-top:10px}
+.addrow input{width:100%}
+.banner{background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-size:14px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.banner .btn{padding:8px 16px;font-size:14px}
+.admin{font-size:12.5px;color:var(--muted);text-align:center}
+.admin a{color:var(--muted)}
 @media (max-width:420px){.ed-row{grid-template-columns:4.6em 1fr 2.4em}.ed-row .formal{grid-column:2/3}.ed-row .del{grid-row:1/3;grid-column:3}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -127,7 +140,7 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
 <div class="wrap" id="view-news">
   <div class="top">
     <span id="clock"></span>
-    <button class="linkbtn" id="open-editor" type="button">銘柄を編集</button>
+    <button class="linkbtn" id="open-my" type="button">マイ銘柄を選ぶ</button>
   </div>
   <header class="mast">
     <div class="eyebrow">Morning Brief · Watchlist</div>
@@ -138,9 +151,52 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
       <select id="past" aria-label="過去の号を選ぶ" hidden></select>
     </div>
     <div class="status" id="status" role="status"></div>
+    <div class="banner" id="banner" hidden></div>
   </header>
   <main id="main" class="wrap"><div class="empty">最新号を読み込んでいます…</div></main>
   <p class="note">個人の情報収集用に、公開された報道や適時開示をもとに日本語でまとめたものです。投資助言ではありません。売買の判断はご自身で、必ず各社の開示資料など一次情報を確認してください。</p>
+  <p class="admin"><a href="#edit" id="open-editor">配信リストの管理（作成者用）</a></p>
+</div>
+
+<div class="wrap" id="view-my" hidden>
+  <div class="top">
+    <button class="linkbtn" id="close-my" type="button">← ニュースに戻る</button>
+    <span id="my-count"></span>
+  </div>
+  <header class="mast">
+    <div class="eyebrow">My Watchlist</div>
+    <h1>マイ銘柄を選ぶ</h1>
+    <p class="status" style="margin:0">チェックした銘柄のニュースだけが表示されます。選んだ内容はこのスマホの中だけに保存され、ほかの人には影響しません。</p>
+  </header>
+  <section class="box">
+    <h2>配信中の銘柄から選ぶ</h2>
+    <div class="loadrow" style="margin-bottom:8px">
+      <button class="btn sub" id="my-all" type="button">すべて選ぶ</button>
+      <button class="btn sub" id="my-none" type="button">すべて外す</button>
+    </div>
+    <div class="my-list" id="my-list"></div>
+  </section>
+  <section class="box">
+    <h2>リストにない銘柄を追加</h2>
+    <p class="note" style="margin:0">ここで追加した銘柄は、配信リストに加わると翌朝からニュースが届きます。下の「追加を依頼」で作成者に知らせてください。</p>
+    <div class="addrow">
+      <input id="my-code" placeholder="コード" aria-label="証券コード" autocapitalize="characters" maxlength="5">
+      <input id="my-name" placeholder="銘柄名" aria-label="銘柄名">
+      <button class="btn sub" id="my-add" type="button">追加</button>
+    </div>
+    <div class="my-list" id="my-extra" style="margin-top:8px"></div>
+    <div class="status" id="my-msg" role="status"></div>
+    <div id="my-req" hidden style="margin-top:10px">
+      <button class="btn" id="my-send" type="button">追加を依頼（LINEなどで送る）</button>
+      <details style="margin-top:10px"><summary class="status">送る内容を見る</summary><pre id="my-req-text"></pre></details>
+    </div>
+  </section>
+  <section class="box">
+    <h2>友だちにすすめる</h2>
+    <p class="note" style="margin:0 0 10px">今の選び方を入れたリンクを送れます。開いた人は同じ銘柄が選ばれた状態から始められます（あとで自由に変えられます）。</p>
+    <button class="btn sub" id="my-share" type="button">このアプリのリンクを送る</button>
+  </section>
+  <p class="admin"><button class="linkbtn" id="my-clear" type="button">マイ銘柄を使わず、すべての銘柄を表示する</button></p>
 </div>
 
 <div class="wrap" id="view-editor" hidden>
@@ -150,11 +206,11 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
   </div>
   <header class="mast">
     <div class="eyebrow">Watchlist Editor</div>
-    <h1>銘柄を編集</h1>
-    <p class="status" style="margin:0">ここで追加・削除してから、下の手順でGitHubに保存します。翌朝のニュースから反映されます。</p>
+    <h1>配信リストの管理</h1>
+    <p class="status" style="margin:0">作成者用：毎朝ニュースを調べる銘柄の一覧です。利用者全員の「マイ銘柄」はこの中から選ばれます。追加・削除したら、下の手順でGitHubに保存してください（翌朝から反映）。</p>
   </header>
   <section class="box">
-    <h2>ウォッチ銘柄</h2>
+    <h2>配信リスト</h2>
     <div class="ed-row ed-head" aria-hidden="true"><span>コード</span><span>表示名</span><span class="formal">正式な社名（検索用）</span><span></span></div>
     <div class="ed-list" id="ed-list"></div>
     <div class="loadrow" style="margin-top:12px">
@@ -191,6 +247,19 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
     del(k){ try{ localStorage.removeItem(k); }catch(e){} }
   };
   let list = [], current = null, watch = [], filter = "all";
+  const MY_KEY = "my:" + APP;
+  let my = store.get(MY_KEY); // null = すべて表示 / [{code,name}]
+  if(!Array.isArray(my)) my = null;
+  const norm = c => String(c||"").trim().toUpperCase().replace(/[０-９Ａ-Ｚ]/g, ch => String.fromCharCode(ch.charCodeAt(0)-0xFEE0));
+  const myCodes = () => my ? new Set(my.map(m => m.code)) : null;
+  const inWatch = c => watch.some(w => w.code === c);
+  function shown(){ // 表示する銘柄（配信中）
+    const s = myCodes(); return s ? watch.filter(w => s.has(w.code)) : watch;
+  }
+  function pending(){ // マイ銘柄のうち配信リストにないもの
+    return my ? my.filter(m => !inWatch(m.code)) : [];
+  }
+  function saveMy(){ my ? store.set(MY_KEY, my) : store.del(MY_KEY); }
   const cache = {};
 
   function tick(){
@@ -222,26 +291,29 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
     catch(e){ return await getJSON(paths[1] + "data/editions/" + date + ".json"); }
   }
   async function getEdition(d){ if(!cache[d]) cache[d] = await loadEdition(d); return cache[d]; }
-  const nameOf = code => (watch.find(w => w.code === code) || {}).name || code;
+  const nameOf = code => (watch.find(w => w.code === code) || (my||[]).find(m => m.code === code) || {}).name || code;
   const codesOf = it => Array.isArray(it.codes) ? it.codes : (it.code ? [it.code] : []);
   function readKey(){ return "read:" + APP + ":" + (current ? current.date : ""); }
 
   function render(){
     const e = current; if(!e) return;
-    const all = e.items || [];
+    const raw = e.items || [];
+    const mine = myCodes();
+    const vis = shown();
+    const all = mine ? raw.filter(it => codesOf(it).some(c => mine.has(c))) : raw;
     const newsCodes = new Set(all.flatMap(codesOf));
-    if(filter !== "all" && !watch.some(w => w.code === filter)) filter = "all";
+    if(filter !== "all" && !vis.some(w => w.code === filter)) filter = "all";
     const items = all.filter(it => filter === "all" || codesOf(it).includes(filter));
     const read = store.get(readKey()) || [];
-    $("count-tick").textContent = watch.length ? watch.length + "銘柄" : "";
-    $("meta").innerHTML = `<span><b>${esc(e.label)}</b></span><span>対象期間 ${esc(e.coverage)}</span><span>約${esc(e.minutes)}分</span><span>ニュース ${all.length}本</span>`;
+    $("count-tick").textContent = vis.length ? vis.length + "銘柄" : "";
+    $("meta").innerHTML = `<span><b>${esc(e.label)}</b></span><span>対象期間 ${esc(e.coverage)}</span>${mine?"<span>マイ銘柄</span>":`<span>約${esc(e.minutes)}分</span>`}<span>ニュース ${all.length}本</span>`;
 
-    const sorted = watch.slice().sort((a,b) => (newsCodes.has(b.code) - newsCodes.has(a.code)));
+    const sorted = vis.slice().sort((a,b) => (newsCodes.has(b.code) - newsCodes.has(a.code)));
     const chips = [`<button class="chip" type="button" data-f="all" aria-pressed="${filter==="all"}"><span class="c">ALL</span><span class="n">すべて</span></button>`]
       .concat(sorted.map(w => `<button class="chip${newsCodes.has(w.code)?" has":""}" type="button" data-f="${esc(w.code)}" aria-pressed="${filter===w.code}"><span class="c">${esc(w.code)}</span><span class="n">${esc(w.name)}</span></button>`)).join("");
 
     const stories = items.map(it => {
-      const idx = all.indexOf(it), isRead = read.includes(artId(it));
+      const idx = raw.indexOf(it), isRead = read.includes(artId(it));
       const k = KIND[it.kind] || KIND.other;
       const tags = codesOf(it).map(c => `<span class="code">${esc(c)}</span><span class="cname">${esc(nameOf(c))}</span>`).join("");
       return `<article class="story${isRead?" read":""}">
@@ -254,16 +326,19 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
       </article>`;
     }).join("");
 
-    const quietCodes = watch.map(w => w.code).filter(c => !newsCodes.has(c));
+    const quietCodes = vis.map(w => w.code).filter(c => !newsCodes.has(c));
+    const pend = pending();
+    const points = mine ? all.slice(0,4).map(it => it.headline) : (e.points||[]);
     const quiet = quietCodes.map(c => `<span><span class="c">${esc(c)}</span>${esc(nameOf(c))}</span>`).join("");
-    const cal = (e.calendar||[]).map(x => `<li><time>${esc(x.when)}</time><span>${x.code?`<span class="code">${esc(x.code)}</span>`:""}${esc(x.what)}</span></li>`).join("");
+    const cal = (e.calendar||[]).filter(x => !mine || !x.code || mine.has(x.code)).map(x => `<li><time>${esc(x.when)}</time><span>${x.code?`<span class="code">${esc(x.code)}</span>`:""}${esc(x.what)}</span></li>`).join("");
 
     $("main").innerHTML = `
-      <section class="points" aria-label="今日のポイント"><h2>まずはこれだけ</h2><ol>${(e.points||[]).map(p => `<li>${esc(p)}</li>`).join("")}</ol></section>
-      <nav class="strip" aria-label="銘柄で絞り込む">${chips}</nav>
-      <section class="stories">${stories || '<div class="empty">この銘柄のニュースはこの号にありません。</div>'}</section>
+      ${points.length ? `<section class="points" aria-label="今日のポイント"><h2>${mine?"マイ銘柄のニュース":"まずはこれだけ"}</h2><ol>${points.map(p => `<li>${esc(p)}</li>`).join("")}</ol></section>` : (mine ? '<div class="empty">この号には、マイ銘柄のニュースはありませんでした。</div>' : "")}
+      ${vis.length ? `<nav class="strip" aria-label="銘柄で絞り込む">${chips}</nav>` : ""}
+      ${stories ? `<section class="stories">${stories}</section>` : (all.length ? '<div class="empty">この銘柄のニュースはこの号にありません。</div>' : "")}
       ${filter==="all" && quiet ? `<section class="box"><h2>目立ったニュースなし（${quietCodes.length}銘柄）</h2><div class="quiet">${quiet}</div></section>` : ""}
-      ${e.trend && filter==="all" ? `<section class="box trend"><h2>${esc(e.trend.title)}</h2><p>${esc(e.trend.body)}</p></section>` : ""}
+      ${pend.length && filter==="all" ? `<section class="box"><h2>配信準備中（${pend.length}銘柄）</h2><div class="quiet">${pend.map(m => `<span><span class="c">${esc(m.code)}</span>${esc(m.name)}</span>`).join("")}</div><p class="note" style="margin:8px 0 0">配信リストに追加されると、翌朝からニュースが届きます。「マイ銘柄を選ぶ」から追加を依頼できます。</p></section>` : ""}
+      ${e.trend && filter==="all" && !mine ? `<section class="box trend"><h2>${esc(e.trend.title)}</h2><p>${esc(e.trend.body)}</p></section>` : ""}
       ${cal ? `<section class="box cal"><h2>決算・イベント予定（日本時間）</h2><ul>${cal}</ul></section>` : ""}`;
     onScroll();
   }
@@ -381,7 +456,96 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
     $("view-news").hidden = true; $("view-editor").hidden = false; scrollTo({top:0});
   }
   $("open-editor").addEventListener("click", openEditor);
-  $("close-editor").addEventListener("click", () => { $("view-editor").hidden = true; $("view-news").hidden = false; render(); });
+  $("close-editor").addEventListener("click", showNews);
+
+  /* ---------- マイ銘柄 ---------- */
+  let incoming = null; // リンクで受け取った銘柄
+  const PAGE = location.origin + location.pathname;
+  function myRender(){
+    const s = myCodes();
+    $("my-list").innerHTML = watch.map(w => `<label class="my-row"><input type="checkbox" data-c="${esc(w.code)}"${!s || s.has(w.code) ? " checked" : ""}><span class="c">${esc(w.code)}</span><span class="n">${esc(w.name)}</span></label>`).join("") || '<div class="note">配信リストを読み込めませんでした。</div>';
+    const pend = pending();
+    $("my-extra").innerHTML = pend.map(m => `<div class="my-row"><span class="c">${esc(m.code)}</span><span class="n">${esc(m.name)}</span><span class="x">配信準備中</span><button class="del" type="button" data-rm="${esc(m.code)}" aria-label="${esc(m.name)}を外す" style="width:2.4em">✕</button></div>`).join("");
+    $("my-req").hidden = !pend.length;
+    $("my-req-text").textContent = reqText();
+    $("my-count").textContent = (my ? my.length : watch.length) + "銘柄を選択中";
+  }
+  function reqText(){
+    return "「朝5分 銘柄ニュース」の配信リストに、次の銘柄の追加をお願いします。\n" + pending().map(m => m.code + " " + m.name).join("\n");
+  }
+  async function sendText(text, url){
+    const full = text + (url ? "\n" + url : "");
+    try{ if(navigator.share){ await navigator.share({text: text, url: url || undefined}); return "送信画面を開きました。"; } }catch(e){ if(e && e.name === "AbortError") return ""; }
+    try{ await navigator.clipboard.writeText(full); return "コピーしました。LINEなどに貼り付けて送ってください。"; }
+    catch(e){ return "コピーできませんでした。内容を長押しでコピーしてください。"; }
+  }
+  $("my-list").addEventListener("change", ev => {
+    const cb = ev.target.closest("input[data-c]"); if(!cb) return;
+    const extra = pending();
+    const picked = [...$("my-list").querySelectorAll("input[data-c]:checked")].map(i => ({code:i.dataset.c, name:nameOf(i.dataset.c)}));
+    my = picked.concat(extra); saveMy(); myRender();
+  });
+  $("my-all").addEventListener("click", () => { my = watch.map(w => ({code:w.code, name:w.name})).concat(pending()); saveMy(); myRender(); });
+  $("my-none").addEventListener("click", () => { my = pending(); saveMy(); myRender(); });
+  $("my-add").addEventListener("click", () => {
+    const code = norm($("my-code").value), name = $("my-name").value.trim();
+    if(!/^[0-9][0-9A-Z]{3}$/.test(code)){ $("my-msg").textContent = "証券コードは4けた（例 7203、130A）で入力してください。"; return; }
+    if(!my) my = watch.map(w => ({code:w.code, name:w.name}));
+    if(my.some(m => m.code === code)){ $("my-msg").textContent = code + " はすでに選ばれています。"; return; }
+    const w = watch.find(x => x.code === code);
+    if(!w && !name){ $("my-msg").textContent = "配信リストにない銘柄です。銘柄名も入力してください。"; return; }
+    my.push({code, name: w ? w.name : name}); saveMy();
+    $("my-code").value = ""; $("my-name").value = "";
+    $("my-msg").textContent = w ? (w.name + " を選びました（配信中の銘柄です）。") : (name + " を追加しました。配信リストに入ると翌朝からニュースが届きます。");
+    myRender();
+  });
+  $("my-extra").addEventListener("click", ev => {
+    const b = ev.target.closest("[data-rm]"); if(!b) return;
+    my = my.filter(m => m.code !== b.dataset.rm); saveMy(); myRender();
+  });
+  $("my-send").addEventListener("click", async () => { $("my-msg").textContent = await sendText(reqText(), ""); });
+  $("my-share").addEventListener("click", async () => {
+    const url = my && my.length ? PAGE + "#my=" + my.map(m => encodeURIComponent(m.code + (inWatch(m.code) ? "" : "~" + m.name))).join(",") : PAGE;
+    $("my-msg").textContent = await sendText("朝5分で読める銘柄ニュースです。自分の銘柄を選んで使えます。", url);
+  });
+  $("my-clear").addEventListener("click", () => { my = null; saveMy(); filter = "all"; showNews(); });
+  function showNews(){ ["view-my","view-editor"].forEach(v => $(v).hidden = true); $("view-news").hidden = false; render(); banner(); scrollTo({top:0}); }
+  async function openMy(){
+    await loadWatch(); myRender(); $("my-msg").textContent = "";
+    $("view-news").hidden = true; $("view-editor").hidden = true; $("view-my").hidden = false; scrollTo({top:0});
+  }
+  $("open-my").addEventListener("click", openMy);
+  $("close-my").addEventListener("click", showNews);
+
+  function parseIncoming(){
+    const m = location.hash.match(/^#my=(.*)$/); if(!m) return null;
+    const arr = m[1].split(",").map(x => { const [c, n] = decodeURIComponent(x).split("~"); return {code:norm(c), name:(n||"").trim()}; })
+      .filter(x => /^[0-9][0-9A-Z]{3}$/.test(x.code));
+    history.replaceState(null, "", PAGE);
+    return arr.length ? arr : null;
+  }
+  function fixNames(arr){ return arr.map(x => ({code:x.code, name:(watch.find(w => w.code === x.code) || {}).name || x.name || x.code})); }
+  const BAN_KEY = "bannerOff:" + APP;
+  function banner(){
+    const b = $("banner");
+    if(incoming){
+      b.innerHTML = `<span>リンクで${incoming.length}銘柄が送られてきました。マイ銘柄をこの内容にしますか？</span><span><button class="btn" type="button" data-b="take">この内容にする</button> <button class="linkbtn" type="button" data-b="skip">今のまま</button></span>`;
+      b.hidden = false; return;
+    }
+    if(!my && !store.get(BAN_KEY)){
+      b.innerHTML = `<span>「マイ銘柄」を選ぶと、自分の銘柄のニュースだけが表示されます。</span><span><button class="btn" type="button" data-b="pick">マイ銘柄を選ぶ</button> <button class="linkbtn" type="button" data-b="off">閉じる</button></span>`;
+      b.hidden = false; return;
+    }
+    b.hidden = true;
+  }
+  $("banner").addEventListener("click", ev => {
+    const k = (ev.target.closest("[data-b]") || {}).dataset; if(!k) return;
+    if(k.b === "take"){ my = fixNames(incoming); incoming = null; saveMy(); filter = "all"; render(); }
+    if(k.b === "skip"){ incoming = null; }
+    if(k.b === "pick"){ openMy(); return; }
+    if(k.b === "off"){ store.set(BAN_KEY, 1); }
+    banner();
+  });
 
   function onScroll(){
     const h = document.documentElement.scrollHeight - innerHeight;
@@ -391,8 +555,11 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
   document.addEventListener("visibilitychange", () => {
     if(document.visibilityState === "visible" && !$("view-news").hidden && current && current.date < new Date(Date.now()+9*3600e3).toISOString().slice(0,10)) load();
   });
+  incoming = parseIncoming();
+  if(incoming && !my){ my = incoming; incoming = null; saveMy(); }
+  $("open-editor").addEventListener("click", ev => { ev.preventDefault(); openEditor(); });
   if(location.hash === "#edit") openEditor();
-  load();
+  load().then(() => { if(my) my = fixNames(my), saveMy(); banner(); });
 })();
 </script>
 </body>
