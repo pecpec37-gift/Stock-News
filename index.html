@@ -126,6 +126,21 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
 .my-row .x{margin-left:auto;font-size:12px;color:var(--accent);white-space:nowrap}
 .addrow{display:grid;grid-template-columns:6em 1fr auto;gap:6px;margin-top:10px}
 .addrow input{width:100%}
+.my-row.pick{cursor:default}
+.my-row .open{flex:1;min-width:0;display:flex;gap:10px;align-items:center;font:inherit;color:inherit;background:none;border:0;padding:0;text-align:left;cursor:pointer}
+.my-row .open::after{content:"›";margin-left:8px;color:var(--muted);font-size:18px;line-height:1}
+.memo-flag{font-size:11px;font-weight:700;color:var(--accent);border:1.5px solid var(--accent);border-radius:4px;padding:0 6px;line-height:1.6;white-space:nowrap;margin-left:auto}
+.memo-none{font-size:11px;color:var(--muted);white-space:nowrap;margin-left:auto}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:14px;font-weight:700}
+.field .hint{font-size:12.5px;color:var(--muted);font-weight:400}
+textarea{font:inherit;font-size:15px;line-height:1.7;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-height:6.5em;resize:vertical}
+.memo-view{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;margin:0}
+.memo-view.empty-v{color:var(--muted)}
+.memo-sec{display:flex;flex-direction:column;gap:4px;padding:12px 0;border-top:1px solid var(--line)}
+.memo-sec:first-child{border-top:0;padding-top:0}
+.memo-sec h3{font-size:13px;letter-spacing:.06em;color:var(--accent);margin:0}
+.danger{color:#b4413a}
 .banner{background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-size:14px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
 .banner .btn{padding:8px 16px;font-size:14px}
 .admin{font-size:12.5px;color:var(--muted);text-align:center}
@@ -166,7 +181,7 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
   <header class="mast">
     <div class="eyebrow">My Watchlist</div>
     <h1>マイ銘柄を選ぶ</h1>
-    <p class="status" style="margin:0">チェックした銘柄のニュースだけが表示されます。選んだ内容はこのスマホの中だけに保存され、ほかの人には影響しません。</p>
+    <p class="status" style="margin:0">チェックした銘柄のニュースだけが表示されます。銘柄名を押すと、その銘柄のメモを書いたり見たりできます。選んだ内容とメモはこのスマホの中だけに保存されます。</p>
   </header>
   <section class="box">
     <h2>配信中の銘柄から選ぶ</h2>
@@ -196,7 +211,52 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
     <p class="note" style="margin:0 0 10px">今の選び方を入れたリンクを送れます。開いた人は同じ銘柄が選ばれた状態から始められます（あとで自由に変えられます）。</p>
     <button class="btn sub" id="my-share" type="button">このアプリのリンクを送る</button>
   </section>
+  <section class="box">
+    <h2>バックアップ</h2>
+    <p class="note" style="margin:0 0 10px">マイ銘柄とメモは、このスマホ（ブラウザ）の中だけに保存されています。機種変更やデータ消去に備えて、ときどきバックアップを保存してください。</p>
+    <div class="loadrow">
+      <button class="btn" id="bk-save" type="button">バックアップを保存</button>
+      <button class="btn sub" id="bk-copy" type="button">文字でコピー</button>
+    </div>
+    <div class="status" id="bk-last" style="margin-top:6px"></div>
+    <details style="margin-top:12px"><summary class="status">バックアップから戻す</summary>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+        <label class="btn sub" style="align-self:flex-start">ファイルを選んで戻す<input type="file" id="bk-file" accept=".json,application/json,text/plain" hidden></label>
+        <textarea id="bk-text" placeholder="またはコピーしたバックアップの文字をここに貼り付け" aria-label="バックアップの文字" style="min-height:4.5em"></textarea>
+        <button class="btn sub" id="bk-restore" type="button" style="align-self:flex-start">貼り付けた内容で戻す</button>
+      </div>
+    </details>
+    <div class="status" id="bk-msg" role="status"></div>
+  </section>
   <p class="admin"><button class="linkbtn" id="my-clear" type="button">マイ銘柄を使わず、すべての銘柄を表示する</button></p>
+</div>
+
+<div class="wrap" id="view-memo" hidden>
+  <div class="top">
+    <button class="linkbtn" id="close-memo" type="button">← マイ銘柄に戻る</button>
+    <span id="memo-updated"></span>
+  </div>
+  <header class="mast">
+    <div class="eyebrow">Memo</div>
+    <h1 id="memo-title"></h1>
+  </header>
+  <section class="box" id="memo-show">
+    <div id="memo-show-body"></div>
+    <div class="loadrow" style="margin-top:12px"><button class="btn" id="memo-edit" type="button">メモを編集</button></div>
+  </section>
+  <section class="box" id="memo-form" hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="field"><label for="memo-why">なぜ持っているか <span class="hint">買った理由・期待していること</span></label><textarea id="memo-why" data-k="why"></textarea></div>
+      <div class="field"><label for="memo-plan">売買のタイミング <span class="hint">買い増し・売却を考える条件や価格の目安</span></label><textarea id="memo-plan" data-k="plan"></textarea></div>
+      <div class="field"><label for="memo-note">その他のメモ <span class="hint">取得単価・株数・気になる点など</span></label><textarea id="memo-note" data-k="note"></textarea></div>
+    </div>
+    <div class="loadrow" style="margin-top:14px">
+      <button class="btn" id="memo-done" type="button">保存して閉じる</button>
+      <button class="linkbtn danger" id="memo-del" type="button">メモを削除</button>
+    </div>
+    <div class="status" id="memo-msg" role="status">入力した内容は自動で保存されます。</div>
+  </section>
+  <p class="note">メモはこのスマホの中だけに保存され、ほかの人には見えません（友だちに送るリンクにも含まれません）。</p>
 </div>
 
 <div class="wrap" id="view-editor" hidden>
@@ -463,13 +523,14 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
   const PAGE = location.origin + location.pathname;
   function myRender(){
     const s = myCodes();
-    $("my-list").innerHTML = watch.map(w => `<label class="my-row"><input type="checkbox" data-c="${esc(w.code)}"${!s || s.has(w.code) ? " checked" : ""}><span class="c">${esc(w.code)}</span><span class="n">${esc(w.name)}</span></label>`).join("") || '<div class="note">配信リストを読み込めませんでした。</div>';
+    $("my-list").innerHTML = watch.map(w => `<div class="my-row pick"><input type="checkbox" data-c="${esc(w.code)}"${!s || s.has(w.code) ? " checked" : ""} aria-label="${esc(w.name)}をマイ銘柄にする"><button class="open" type="button" data-memo="${esc(w.code)}"><span class="c">${esc(w.code)}</span><span class="n">${esc(w.name)}</span>${flag(w.code)}</button></div>`).join("") || '<div class="note">配信リストを読み込めませんでした。</div>';
     const pend = pending();
-    $("my-extra").innerHTML = pend.map(m => `<div class="my-row"><span class="c">${esc(m.code)}</span><span class="n">${esc(m.name)}</span><span class="x">配信準備中</span><button class="del" type="button" data-rm="${esc(m.code)}" aria-label="${esc(m.name)}を外す" style="width:2.4em">✕</button></div>`).join("");
+    $("my-extra").innerHTML = pend.map(m => `<div class="my-row pick"><button class="open" type="button" data-memo="${esc(m.code)}"><span class="c">${esc(m.code)}</span><span class="n">${esc(m.name)}</span>${flag(m.code)}</button><span class="x">配信準備中</span><button class="del" type="button" data-rm="${esc(m.code)}" aria-label="${esc(m.name)}を外す" style="width:2.4em">✕</button></div>`).join("");
     $("my-req").hidden = !pend.length;
     $("my-req-text").textContent = reqText();
     $("my-count").textContent = (my ? my.length : watch.length) + "銘柄を選択中";
   }
+  const flag = c => hasMemo(c) ? '<span class="memo-flag">メモあり</span>' : '<span class="memo-none">メモなし</span>';
   function reqText(){
     return "「朝5分 銘柄ニュース」の配信リストに、次の銘柄の追加をお願いします。\n" + pending().map(m => m.code + " " + m.name).join("\n");
   }
@@ -499,7 +560,9 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
     $("my-msg").textContent = w ? (w.name + " を選びました（配信中の銘柄です）。") : (name + " を追加しました。配信リストに入ると翌朝からニュースが届きます。");
     myRender();
   });
+  $("my-list").addEventListener("click", ev => { const b = ev.target.closest("[data-memo]"); if(b) openMemo(b.dataset.memo); });
   $("my-extra").addEventListener("click", ev => {
+    const o = ev.target.closest("[data-memo]"); if(o){ openMemo(o.dataset.memo); return; }
     const b = ev.target.closest("[data-rm]"); if(!b) return;
     my = my.filter(m => m.code !== b.dataset.rm); saveMy(); myRender();
   });
@@ -509,11 +572,102 @@ pre{white-space:pre-wrap;word-break:break-all;font-family:var(--f-mono);font-siz
     $("my-msg").textContent = await sendText("朝5分で読める銘柄ニュースです。自分の銘柄を選んで使えます。", url);
   });
   $("my-clear").addEventListener("click", () => { my = null; saveMy(); filter = "all"; showNews(); });
-  function showNews(){ ["view-my","view-editor"].forEach(v => $(v).hidden = true); $("view-news").hidden = false; render(); banner(); scrollTo({top:0}); }
+  function showNews(){ ["view-my","view-editor","view-memo"].forEach(v => $(v).hidden = true); $("view-news").hidden = false; render(); banner(); scrollTo({top:0}); }
   async function openMy(){
     await loadWatch(); myRender(); $("my-msg").textContent = "";
-    $("view-news").hidden = true; $("view-editor").hidden = true; $("view-my").hidden = false; scrollTo({top:0});
+    $("view-news").hidden = true; $("view-editor").hidden = true; $("view-memo").hidden = true; $("view-my").hidden = false; bkLast(); scrollTo({top:0});
   }
+
+  /* ---------- メモ ---------- */
+  const MEMO_KEY = "memo:" + APP, BK_KEY = "backupAt:" + APP;
+  let memos = store.get(MEMO_KEY); if(!memos || typeof memos !== "object" || Array.isArray(memos)) memos = {};
+  const FIELDS = [["why","なぜ持っているか"],["plan","売買のタイミング"],["note","その他のメモ"]];
+  const hasMemo = c => { const m = memos[c]; return !!(m && FIELDS.some(([k]) => String(m[k]||"").trim())); };
+  const fmtTime = t => t ? new Date(t).toLocaleString("ja-JP",{year:"numeric",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
+  let memoCode = null, memoTimer = null;
+  function openMemo(code){
+    memoCode = code;
+    $("memo-title").innerHTML = `<span class="code" style="font-size:.42em;vertical-align:.35em;margin-right:.4em">${esc(code)}</span>${esc(nameOf(code))}`;
+    memoShow(!hasMemo(code));
+    ["view-news","view-my","view-editor"].forEach(v => $(v).hidden = true); $("view-memo").hidden = false; scrollTo({top:0});
+  }
+  function memoShow(editing){
+    const m = memos[memoCode] || {};
+    $("memo-updated").textContent = m.updated ? "更新 " + fmtTime(m.updated) : "";
+    $("memo-show").hidden = editing; $("memo-form").hidden = !editing;
+    if(editing){
+      FIELDS.forEach(([k]) => $("memo-" + k).value = m[k] || "");
+      $("memo-msg").textContent = "入力した内容は自動で保存されます。";
+    }else{
+      $("memo-show-body").innerHTML = FIELDS.map(([k,l]) => `<div class="memo-sec"><h3>${l}</h3><p class="memo-view${String(m[k]||"").trim()?"":" empty-v"}">${esc(String(m[k]||"").trim() || "（未入力）")}</p></div>`).join("");
+    }
+  }
+  function memoSave(){
+    clearTimeout(memoTimer); if(!memoCode) return;
+    const m = {}; FIELDS.forEach(([k]) => m[k] = $("memo-" + k).value);
+    const prev = memos[memoCode] || {};
+    if(FIELDS.every(([k]) => (prev[k]||"") === m[k])) return;
+    if(FIELDS.some(([k]) => m[k].trim())){ m.updated = Date.now(); memos[memoCode] = m; } else delete memos[memoCode];
+    store.set(MEMO_KEY, memos);
+    $("memo-msg").textContent = "保存しました（" + new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"}) + "）";
+    $("memo-updated").textContent = memos[memoCode] ? "更新 " + fmtTime(memos[memoCode].updated) : "";
+  }
+  $("memo-form").addEventListener("input", () => { clearTimeout(memoTimer); memoTimer = setTimeout(memoSave, 600); });
+  $("memo-edit").addEventListener("click", () => { memoShow(true); $("memo-why").focus(); });
+  $("memo-done").addEventListener("click", () => { memoSave(); hasMemo(memoCode) ? memoShow(false) : openMy(); });
+  $("memo-del").addEventListener("click", () => {
+    if(!confirm(nameOf(memoCode) + " のメモを削除しますか？")) return;
+    delete memos[memoCode]; store.set(MEMO_KEY, memos); openMy();
+  });
+  $("close-memo").addEventListener("click", () => { memoSave(); openMy(); });
+  addEventListener("pagehide", memoSave);
+
+  /* ---------- バックアップ ---------- */
+  function bkData(){
+    return {app:"stock-news-backup", version:1, exported:new Date().toISOString(), my:my, memos:memos};
+  }
+  function bkLast(){
+    const t = store.get(BK_KEY), n = Object.keys(memos).filter(hasMemo).length;
+    const newer = Object.values(memos).some(m => m && m.updated > (t||0));
+    $("bk-last").textContent = "メモ " + n + "件 ・ " + (t ? "前回のバックアップ " + fmtTime(t) + (newer ? "（その後メモを更新しています）" : "") : "まだバックアップしていません");
+  }
+  function bkName(){ const d = new Date(Date.now()+9*3600e3).toISOString().slice(0,10); return "銘柄ニュース_バックアップ_" + d + ".json"; }
+  $("bk-save").addEventListener("click", async () => {
+    const text = JSON.stringify(bkData(), null, 2), name = bkName();
+    let done = false;
+    try{
+      const file = new File([text], name, {type:"application/json"});
+      if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:name}); done = true; }
+    }catch(e){ if(e && e.name === "AbortError"){ $("bk-msg").textContent = ""; return; } }
+    if(!done){
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], {type:"application/json"})); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    }
+    store.set(BK_KEY, Date.now()); bkLast();
+    $("bk-msg").textContent = "バックアップを作りました。「ファイル」アプリやメール、LINEの自分あてなどに保存しておいてください。";
+  });
+  $("bk-copy").addEventListener("click", async () => {
+    try{ await navigator.clipboard.writeText(JSON.stringify(bkData())); store.set(BK_KEY, Date.now()); bkLast(); $("bk-msg").textContent = "コピーしました。メモアプリや自分あてのメールなどに貼り付けて保存してください。"; }
+    catch(e){ $("bk-msg").textContent = "コピーできませんでした。「バックアップを保存」をお使いください。"; }
+  });
+  function bkRestore(text){
+    let d; try{ d = JSON.parse(String(text||"").trim()); }catch(e){ $("bk-msg").textContent = "バックアップの形式が正しくありません。"; return; }
+    if(!d || d.app !== "stock-news-backup" || typeof d.memos !== "object"){ $("bk-msg").textContent = "このアプリのバックアップではないようです。"; return; }
+    const n = Object.keys(d.memos||{}).length;
+    if(!confirm("バックアップ（" + fmtTime(d.exported) + "、メモ" + n + "件）で、今のマイ銘柄とメモを置き換えます。よろしいですか？")) return;
+    const clean = {};
+    Object.entries(d.memos||{}).forEach(([c,m]) => { if(m && typeof m === "object") clean[norm(c)] = {why:String(m.why||""), plan:String(m.plan||""), note:String(m.note||""), updated:Number(m.updated)||Date.now()}; });
+    memos = clean; store.set(MEMO_KEY, memos);
+    my = Array.isArray(d.my) ? d.my.filter(x => x && x.code).map(x => ({code:norm(x.code), name:String(x.name||x.code)})) : null; saveMy();
+    $("bk-text").value = ""; myRender(); bkLast();
+    $("bk-msg").textContent = "バックアップから戻しました（メモ" + Object.keys(memos).length + "件）。";
+  }
+  $("bk-restore").addEventListener("click", () => bkRestore($("bk-text").value));
+  $("bk-file").addEventListener("change", ev => {
+    const f = ev.target.files && ev.target.files[0]; if(!f) return;
+    f.text().then(bkRestore).catch(() => { $("bk-msg").textContent = "ファイルを読み込めませんでした。"; });
+    ev.target.value = "";
+  });
   $("open-my").addEventListener("click", openMy);
   $("close-my").addEventListener("click", showNews);
 
